@@ -1,5 +1,5 @@
 import type { Quest } from '../types'
-import { formatGEN, shortAddr } from '../hooks/useTx'
+import { formatGEN, displayName } from '../hooks/useTx'
 import { CategoryBadge } from './CategoryBadge'
 
 interface Props {
@@ -8,47 +8,74 @@ interface Props {
 }
 
 export function QuestCard({ quest, onClick }: Props) {
+  const isBugBounty = quest.quest_type === 'bug_bounty'
+
   return (
     <button
-      className="card w-full text-left hover:border-quest-purple transition-all duration-150 hover:shadow-lg hover:shadow-quest-purple/10 cursor-pointer"
+      className="card-hover w-full text-left cursor-pointer group relative overflow-hidden"
       onClick={onClick}
     >
-      <div className="flex items-start justify-between gap-3 mb-2">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-            <StatusBadge quest={quest} />
-            <CategoryBadge category={quest.category ?? 'other'} size="xs" />
-            <span className="text-xs text-quest-muted font-mono">#{quest.id}</span>
-          </div>
-          <h3 className="text-white font-semibold text-sm leading-tight line-clamp-2">{quest.title}</h3>
-        </div>
-        <div className="flex-shrink-0 text-right">
-          <div className="text-quest-gold font-bold text-lg leading-none">{formatGEN(quest.reward)}</div>
-          <div className="text-quest-muted text-xs">GEN</div>
-        </div>
+      {/* Subtle top accent line */}
+      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-q-purple/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+      {/* Top row */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <StatusBadge quest={quest} />
+        <CategoryBadge category={quest.category ?? 'other'} size="xs" />
+        {isBugBounty && (
+          <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-orange-400/30 bg-orange-400/10 text-orange-400 font-medium">Bug</span>
+        )}
+        <span className="text-[11px] text-q-muted/50 font-mono ml-auto">#{quest.id}</span>
       </div>
 
+      {/* Title */}
+      <h3 className="text-q-text font-semibold text-[15px] leading-snug line-clamp-2 mb-2.5 group-hover:text-q-purple transition-colors duration-200">
+        {quest.title}
+      </h3>
+
+      {/* Description */}
       {quest.description && (
-        <p className="text-xs text-quest-muted line-clamp-2 mb-3 leading-relaxed">{quest.description}</p>
+        <p className="text-xs text-q-muted line-clamp-2 leading-relaxed mb-4">{quest.description}</p>
       )}
 
-      <div className="flex items-center justify-between text-xs text-quest-muted">
-        <span>by {shortAddr(quest.creator)}</span>
-        {quest.winner && (
-          <span className="text-quest-green">Won by {shortAddr(quest.winner)}</span>
-        )}
-        {quest.appealed && !quest.winner && (
-          <span className="text-quest-gold">Appealed — Reopened</span>
-        )}
+      {/* Footer */}
+      <div className="flex items-end justify-between gap-2 mt-auto pt-3 border-t border-q-border/50">
+        <span className="text-xs text-q-muted">
+          by <span className="font-mono text-q-subtle">{displayName(quest.creator)}</span>
+        </span>
+        <div className="text-right">
+          <div className="text-q-gold font-bold text-lg leading-none tabular-nums">
+            {formatGEN(quest.reward)}
+          </div>
+          <div className="text-q-muted text-[10px] uppercase tracking-wide">GEN</div>
+        </div>
       </div>
+
+      {quest.winner && (
+        <div className="mt-2 text-xs text-q-green font-medium">
+          Won by <span className="font-mono">{displayName(quest.winner)}</span>
+        </div>
+      )}
     </button>
   )
 }
 
 function StatusBadge({ quest }: { quest: Quest }) {
   if (quest.completed)
-    return <span className="px-1.5 py-0.5 rounded-full bg-quest-green/10 text-quest-green text-[10px] border border-quest-green/30">Done</span>
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-q-green/30 bg-q-green/10 text-q-green">
+        <span className="w-1 h-1 rounded-full bg-q-green" />Done
+      </span>
+    )
   if (!quest.active)
-    return <span className="px-1.5 py-0.5 rounded-full bg-quest-muted/10 text-quest-muted text-[10px] border border-quest-muted/30">Cancelled</span>
-  return <span className="px-1.5 py-0.5 rounded-full bg-quest-purple/10 text-quest-purple text-[10px] border border-quest-purple/30 animate-pulse">Active</span>
+    return (
+      <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-q-muted/30 bg-q-muted/10 text-q-muted">
+        Cancelled
+      </span>
+    )
+  return (
+    <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border border-q-purple/35 bg-q-purple/12 text-q-purple">
+      <span className="w-1 h-1 rounded-full bg-q-purple animate-pulse" />Active
+    </span>
+  )
 }

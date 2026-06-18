@@ -20,7 +20,8 @@ export interface PollState {
   error: string | null
 }
 
-const TERMINAL: TxPhase[] = ['FINALIZED', 'UNDETERMINED', 'CANCELED', 'VALIDATORS_TIMEOUT', 'LEADER_TIMEOUT']
+// ACCEPTED = consensus reached; treat as terminal since Bradbury may never advance to FINALIZED
+const TERMINAL: TxPhase[] = ['ACCEPTED', 'FINALIZED', 'UNDETERMINED', 'CANCELED', 'VALIDATORS_TIMEOUT', 'LEADER_TIMEOUT']
 
 // Poll a tx hash until it reaches a terminal state.
 // Returns live phase updates every ~2s.
@@ -47,7 +48,7 @@ export function usePollTx(hash: string | null): PollState {
         } catch (e) {
           setState(s => ({ ...s, error: String(e) }))
         }
-        await new Promise(r => setTimeout(r, 2000))
+        await new Promise(r => setTimeout(r, 4000))
       }
     }
 

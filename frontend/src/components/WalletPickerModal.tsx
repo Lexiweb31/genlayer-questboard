@@ -8,7 +8,6 @@ interface Props {
 export function WalletPickerModal({ onSelect, onClose }: Props) {
   const eip6963 = useWalletProviders()
 
-  // Legacy fallback: window.ethereum that didn't announce via EIP-6963
   const legacyProvider =
     window.ethereum && !eip6963.some(p => p.provider === window.ethereum)
       ? window.ethereum
@@ -16,99 +15,87 @@ export function WalletPickerModal({ onSelect, onClose }: Props) {
 
   const total = eip6963.length + (legacyProvider ? 1 : 0)
 
-  const pick = (provider: EthereumProvider) => {
-    onSelect(provider)
-    onClose()
-  }
+  const pick = (provider: EthereumProvider) => { onSelect(provider); onClose() }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative card w-full max-w-sm z-10 shadow-2xl border-quest-purple/40">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-quest-card border border-quest-border rounded-2xl w-full max-w-sm shadow-2xl z-10 overflow-hidden">
 
-        <div className="flex items-center justify-between mb-5">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-quest-border">
           <div>
-            <h2 className="text-lg font-bold text-white">Connect Wallet</h2>
-            <p className="text-xs text-quest-muted mt-0.5">Choose an EVM wallet</p>
+            <h2 className="text-base font-semibold text-q-text">Connect Wallet</h2>
+            <p className="text-xs text-quest-muted mt-0.5">Choose an EVM-compatible wallet</p>
           </div>
-          <button className="text-quest-muted hover:text-white transition-colors text-sm" onClick={onClose}>✕</button>
+          <button className="text-quest-muted hover:text-q-text transition-colors w-7 h-7 flex items-center justify-center rounded-lg hover:bg-quest-surface" onClick={onClose}>✕</button>
         </div>
 
-        {total === 0 ? (
-          <NoWalletState />
-        ) : (
-          <div className="space-y-2">
-            {eip6963.map(detail => (
-              <WalletRow
-                key={detail.info.uuid}
-                name={detail.info.name}
-                icon={detail.info.icon}
-                onPick={() => pick(detail.provider)}
-              />
-            ))}
-            {legacyProvider && (
-              <WalletRow
-                name="Browser Wallet"
-                icon=""
-                emoji="🌐"
-                onPick={() => pick(legacyProvider)}
-              />
-            )}
-          </div>
-        )}
+        <div className="p-4">
+          {total === 0 ? (
+            <NoWalletState />
+          ) : (
+            <div className="space-y-2">
+              {eip6963.map(detail => (
+                <WalletRow
+                  key={detail.info.uuid}
+                  name={detail.info.name}
+                  icon={detail.info.icon}
+                  onPick={() => pick(detail.provider)}
+                />
+              ))}
+              {legacyProvider && (
+                <WalletRow name="Browser Wallet" icon="" emoji="🌐" onPick={() => pick(legacyProvider)} />
+              )}
+            </div>
+          )}
+        </div>
 
-        <p className="text-xs text-quest-muted text-center mt-5">
-          Only the wallet you pick will be used. Your keys stay in your wallet.
-        </p>
+        <div className="px-5 pb-5 text-center">
+          <p className="text-[11px] text-quest-muted">
+            Your keys stay in your wallet. QuestBoard never has access.
+          </p>
+        </div>
       </div>
     </div>
   )
 }
 
-function WalletRow({
-  name, icon, emoji, onPick,
-}: {
-  name: string; icon: string; emoji?: string; onPick: () => void
-}) {
+function WalletRow({ name, icon, emoji, onPick }: { name: string; icon: string; emoji?: string; onPick: () => void }) {
   return (
     <button
-      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-quest-border hover:border-quest-purple hover:bg-quest-purple/5 transition-all text-left group"
       onClick={onPick}
+      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-quest-border hover:border-quest-purple/50 hover:bg-quest-purple/5 transition-all text-left group"
     >
-      <div className="w-10 h-10 rounded-xl border border-quest-border bg-quest-surface flex items-center justify-center flex-shrink-0 overflow-hidden group-hover:border-quest-purple/40 transition-colors">
-        {icon
-          ? <img src={icon} alt={name} className="w-8 h-8 object-contain" />
-          : <span className="text-xl">{emoji}</span>
-        }
+      <div className="w-9 h-9 rounded-xl bg-quest-surface border border-quest-border flex items-center justify-center flex-shrink-0 overflow-hidden group-hover:border-quest-purple/30 transition-colors">
+        {icon ? <img src={icon} alt={name} className="w-7 h-7 object-contain" /> : <span className="text-lg">{emoji}</span>}
       </div>
-      <span className="text-white font-medium flex-1">{name}</span>
-      <span className="text-quest-muted text-xs">→</span>
+      <span className="text-sm font-medium text-q-text flex-1">{name}</span>
+      <svg className="w-4 h-4 text-quest-muted group-hover:text-q-text transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+      </svg>
     </button>
   )
 }
 
 function NoWalletState() {
+  const wallets = [
+    { name: 'Rabby',           url: 'https://rabby.io' },
+    { name: 'MetaMask',        url: 'https://metamask.io' },
+    { name: 'Coinbase Wallet', url: 'https://www.coinbase.com/wallet' },
+    { name: 'Rainbow',         url: 'https://rainbow.me' },
+  ]
   return (
-    <div className="text-center py-8 space-y-4">
-      <div className="text-4xl">🦺</div>
+    <div className="text-center py-6 space-y-4">
+      <div className="w-14 h-14 rounded-2xl bg-quest-surface border border-quest-border flex items-center justify-center mx-auto text-2xl">🦺</div>
       <div>
-        <p className="text-white font-semibold mb-1">No EVM wallet detected</p>
-        <p className="text-quest-muted text-sm">Install one of these to continue:</p>
+        <p className="text-q-text font-semibold mb-1">No wallet detected</p>
+        <p className="text-quest-muted text-sm">Install an EVM wallet to continue</p>
       </div>
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        {[
-          { name: 'Rabby', url: 'https://rabby.io' },
-          { name: 'MetaMask', url: 'https://metamask.io' },
-          { name: 'Coinbase Wallet', url: 'https://www.coinbase.com/wallet' },
-          { name: 'Rainbow', url: 'https://rainbow.me' },
-        ].map(w => (
-          <a
-            key={w.name}
-            href={w.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="border border-quest-border rounded-lg px-3 py-2 text-quest-muted hover:text-white hover:border-quest-purple transition-all text-center"
-          >
+      <div className="grid grid-cols-2 gap-2">
+        {wallets.map(w => (
+          <a key={w.name} href={w.url} target="_blank" rel="noopener noreferrer"
+            className="border border-quest-border rounded-xl px-3 py-2.5 text-sm text-quest-subtle hover:text-q-text hover:border-quest-purple/40 transition-all text-center font-medium">
             {w.name}
           </a>
         ))}

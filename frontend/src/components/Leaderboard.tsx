@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import { readClient } from '../hooks/useClient'
 import { CONTRACT_ADDRESS } from '../config'
-import { formatGEN, shortAddr } from '../hooks/useTx'
-import type { LeaderboardEntry, CreatorEntry } from '../types'
+import { formatGEN, displayName } from '../hooks/useTx'
+import type { LeaderboardEntry, CreatorEntry, Quest } from '../types'
 
 type Tab = 'adventurers' | 'creators'
 
@@ -15,12 +15,25 @@ export function Leaderboard() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [adv, cre] = await Promise.all([
+      const [adv, allQuests] = await Promise.all([
         readClient.readContract({ address: CONTRACT_ADDRESS as `0x${string}`, functionName: 'get_leaderboard', args: [] }),
-        readClient.readContract({ address: CONTRACT_ADDRESS as `0x${string}`, functionName: 'get_creator_stats', args: [] }),
+        readClient.readContract({ address: CONTRACT_ADDRESS as `0x${string}`, functionName: 'get_all_quests', args: [] }),
       ])
       setAdventurers(((adv as unknown) as LeaderboardEntry[]) ?? [])
-      setCreators(((cre as unknown) as CreatorEntry[]) ?? [])
+
+      // Build creator stats from quest data since the contract has no get_creator_stats
+      const quests = ((allQuests as unknown) as Quest[]) ?? []
+      const statsMap = new Map<string, CreatorEntry>()
+      for (const q of quests) {
+        const addr = q.creator.toLowerCase()
+        const entry = statsMap.get(addr) ?? { address: q.creator, quests_posted: 0, total_gen_posted: 0, quests_completed: 0 }
+        entry.quests_posted += 1
+        entry.total_gen_posted += Number(BigInt(q.reward || 0))
+        if (q.completed) entry.quests_completed += 1
+        statsMap.set(addr, entry)
+      }
+      const ranked = [...statsMap.values()].sort((a, b) => b.total_gen_posted - a.total_gen_posted)
+      setCreators(ranked)
     } catch (e) {
       console.error('Leaderboard load failed:', e)
     } finally {
@@ -30,10 +43,18 @@ export function Leaderboard() {
 
   useEffect(() => { load() }, [load])
 
+  // Auto-refresh every 30s and whenever a quest is created/cancelled
+  useEffect(() => {
+    const timer = setInterval(load, 30_000)
+    const onEvent = () => load()
+    window.addEventListener('questboard:refresh', onEvent)
+    return () => { clearInterval(timer); window.removeEventListener('questboard:refresh', onEvent) }
+  }, [load])
+
   return (
     <div className="max-w-2xl mx-auto">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-white mb-1">Leaderboard</h2>
+        <h2 className="text-2xl font-bold text-q-text mb-1">Leaderboard</h2>
         <p className="text-quest-muted text-sm">Top performers across all quests</p>
       </div>
 
@@ -93,7 +114,7 @@ function AdventurerRow({ entry, rank }: { entry: LeaderboardEntry; rank: number 
         {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-white font-mono text-sm truncate">{shortAddr(entry.address)}</div>
+        <div className="text-q-text font-mono text-sm truncate">{displayName(entry.address)}</div>
         <div className="text-xs text-quest-muted">{entry.quests_won} quest{entry.quests_won !== 1 ? 's' : ''} won</div>
       </div>
       <div className="text-right flex-shrink-0">
@@ -120,7 +141,7 @@ function CreatorRow({ entry, rank }: { entry: CreatorEntry; rank: number }) {
         {rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}
       </div>
       <div className="flex-1 min-w-0">
-        <div className="text-white font-mono text-sm truncate">{shortAddr(entry.address)}</div>
+        <div className="text-q-text font-mono text-sm truncate">{displayName(entry.address)}</div>
         <div className="text-xs text-quest-muted">
           {entry.quests_posted} posted · {completionRate}% completed
         </div>
@@ -143,7 +164,7 @@ function TabBtn({ active, onClick, children }: { active: boolean; onClick: () =>
   return (
     <button
       className={`px-4 py-1.5 rounded-md text-sm transition-all ${
-        active ? 'bg-quest-purple text-white font-semibold' : 'text-quest-muted hover:text-white'
+        active ? 'bg-quest-purple text-white font-semibold' : 'text-quest-muted hover:text-q-text'
       }`}
       onClick={onClick}
     >

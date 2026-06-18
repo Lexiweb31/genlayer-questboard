@@ -53,9 +53,9 @@ export function AppealModal({ quest, submission, submissionId, writeClient, txHi
 
       <div className="relative card w-full max-w-lg z-10 shadow-2xl border-quest-gold/30">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-white">Appeal Evaluation</h2>
+          <h2 className="text-lg font-bold text-q-text">Appeal Evaluation</h2>
           {!busy && !appealHash && (
-            <button className="text-quest-muted hover:text-white transition-colors" onClick={onClose}>✕</button>
+            <button className="text-quest-muted hover:text-q-text transition-colors" onClick={onClose}>✕</button>
           )}
         </div>
 
@@ -63,14 +63,14 @@ export function AppealModal({ quest, submission, submissionId, writeClient, txHi
         <div className="bg-quest-surface rounded-lg p-3 border border-quest-border mb-4 text-sm">
           <div className="flex items-center justify-between mb-2">
             <span className="text-quest-muted">Quest:</span>
-            <span className="text-white font-medium">{quest.title}</span>
+            <span className="text-q-text font-medium">{quest.title}</span>
           </div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-quest-muted">Original decision:</span>
             <span className={`font-bold ${originalColor}`}>{originalDecision}</span>
           </div>
           <div className="text-quest-muted text-xs">
-            AI reason: <span className="text-white italic">{submission.reason}</span>
+            AI reason: <span className="text-q-text italic">{submission.reason}</span>
           </div>
         </div>
 
@@ -113,7 +113,7 @@ export function AppealModal({ quest, submission, submissionId, writeClient, txHi
             </div>
 
             <div className="bg-quest-surface/50 rounded-lg p-3 border border-quest-border text-xs text-quest-muted space-y-1">
-              <div className="font-semibold text-white mb-1">What happens on success:</div>
+              <div className="font-semibold text-q-text mb-1">What happens on success:</div>
               {submission.approved ? (
                 <>
                   <div>• The approval is overturned — submission marked rejected</div>

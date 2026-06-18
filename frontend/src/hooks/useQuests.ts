@@ -34,6 +34,13 @@ export function useActiveQuests() {
 
   useEffect(() => { refresh() }, [refresh])
 
+  useEffect(() => {
+    const timer = setInterval(refresh, 30_000)
+    const onEvent = () => refresh()
+    window.addEventListener('questboard:refresh', onEvent)
+    return () => { clearInterval(timer); window.removeEventListener('questboard:refresh', onEvent) }
+  }, [refresh])
+
   return { quests, loading, error, refresh }
 }
 
@@ -57,12 +64,20 @@ export function useAllQuests() {
 
   useEffect(() => { refresh() }, [refresh])
 
+  // Auto-refresh every 30s and on quest change events
+  useEffect(() => {
+    const timer = setInterval(refresh, 30_000)
+    const onEvent = () => refresh()
+    window.addEventListener('questboard:refresh', onEvent)
+    return () => { clearInterval(timer); window.removeEventListener('questboard:refresh', onEvent) }
+  }, [refresh])
+
   return { quests, loading, error, refresh }
 }
 
 export function useQuest(questId: number | null) {
   const [quest, setQuest]     = useState<Quest | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
@@ -105,7 +120,48 @@ export function useSubmissions(questId: number | null) {
 
   useEffect(() => { refresh() }, [refresh])
 
+  // Auto-poll so submitters see results without refreshing
+  useEffect(() => {
+    const timer = setInterval(refresh, 15_000)
+    const onEvent = () => refresh()
+    window.addEventListener('questboard:refresh', onEvent)
+    return () => { clearInterval(timer); window.removeEventListener('questboard:refresh', onEvent) }
+  }, [refresh])
+
   return { submissions, loading, error, refresh }
+}
+
+export function useMySubmissions(address: string | null, questIds: number[]) {
+  const [items, setItems] = useState<{ questId: number; submission: Submission }[]>([])
+  const [loading, setLoading] = useState(false)
+
+  const refresh = useCallback(async () => {
+    if (!address || questIds.length === 0) { setItems([]); return }
+    setLoading(true)
+    try {
+      const results = await Promise.all(
+        questIds.map(id =>
+          read<Submission[]>('get_submissions', [id])
+            .then(subs => subs.filter(s => s.submitter.toLowerCase() === address.toLowerCase()).map(s => ({ questId: id, submission: s })))
+            .catch(() => [])
+        )
+      )
+      setItems(results.flat())
+    } finally {
+      setLoading(false)
+    }
+  }, [address, questIds.join(',')])  // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { refresh() }, [refresh])
+
+  useEffect(() => {
+    const timer = setInterval(refresh, 30_000)
+    const onEvent = () => refresh()
+    window.addEventListener('questboard:refresh', onEvent)
+    return () => { clearInterval(timer); window.removeEventListener('questboard:refresh', onEvent) }
+  }, [refresh])
+
+  return { items, loading, refresh }
 }
 
 export function useClaimable(address: string | null) {
@@ -126,6 +182,15 @@ export function useClaimable(address: string | null) {
   }, [address])
 
   useEffect(() => { refresh() }, [refresh])
+
+  // Re-poll every 30s and on questboard:refresh so the Claim button appears immediately after payouts
+  useEffect(() => {
+    if (!address) return
+    const timer = setInterval(refresh, 30_000)
+    const onEvent = () => refresh()
+    window.addEventListener('questboard:refresh', onEvent)
+    return () => { clearInterval(timer); window.removeEventListener('questboard:refresh', onEvent) }
+  }, [address, refresh])
 
   return { amount, loading, refresh }
 }

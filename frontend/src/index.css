@@ -2,46 +2,187 @@
 @tailwind components;
 @tailwind utilities;
 
-* {
-  box-sizing: border-box;
+/* ── Theme tokens ─────────────────────────────────────────────────────────── */
+:root {
+  /* Dark mode — deeper bg, more contrast between layers, richer accents */
+  --q-bg:      7    8   14;
+  --q-sidebar: 10   12  20;
+  --q-surface: 15   17  28;
+  --q-card:    20   23  38;
+  --q-border:  38   44  72;
+  --q-text:    228  234 255;
+  --q-muted:    98  110 148;
+  --q-subtle:  148  160 195;
+  --q-purple:  118  116 247;
+  --q-gold:    245  162   20;
+  --q-green:    22  196 136;
+  --q-red:     240   68  68;
+}
+
+.light {
+  --q-bg:      232 236 245;
+  --q-sidebar: 242 245 252;
+  --q-surface: 248 250 255;
+  --q-card:    255 255 255;
+  --q-border:  210 218 232;
+  --q-text:     13  20  40;
+  --q-muted:   100 116 139;
+  --q-subtle:   71  85 105;
+  --q-purple:   99 102 241;
+  --q-gold:    161  70   0;
+  --q-green:     5 150 105;
+  --q-red:     220  38  38;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  /* Smooth theme switch */
+  transition: background-color 0.2s ease;
 }
 
 body {
-  background-color: #0b0b18;
-  color: #e2e8f0;
-  font-family: 'JetBrains Mono', monospace;
+  background-color: rgb(var(--q-bg));
+  color: rgb(var(--q-text));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
   margin: 0;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #13132a;
-}
-::-webkit-scrollbar-thumb {
-  background: #2a2a55;
-  border-radius: 3px;
+.light body, .light {
+  color-scheme: light;
 }
 
+/* Prevent browser from injecting white autofill backgrounds */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px rgb(var(--q-bg)) inset !important;
+  -webkit-text-fill-color: rgb(var(--q-text)) !important;
+  caret-color: rgb(var(--q-text));
+}
+
+/* All interactive elements transition smoothly on theme change */
+input, textarea, button, a, [class*="bg-q-"], [class*="border-q-"], [class*="text-q-"] {
+  transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgb(var(--q-border)); border-radius: 99px; }
+.scrollbar-hide::-webkit-scrollbar { display: none; }
+.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Ambient glow behind content (Hierarchy — visual anchor) */
+#root::before {
+  content: '';
+  position: fixed;
+  top: -20%;
+  right: 10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(ellipse, rgba(118,116,247,0.10) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+.light #root::before { opacity: 0.4; }
+#root { position: relative; z-index: 1; }
+
+/* ── Component layer (Consistency principle) ────────────────────────────── */
 @layer components {
+
+  /* Buttons — clear hierarchy: primary > ghost */
   .btn-primary {
-    @apply bg-quest-purple hover:bg-violet-500 text-white font-semibold px-4 py-2 rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2
+           bg-gradient-primary text-white font-semibold text-sm
+           px-4 py-2.5 rounded-xl
+           hover:opacity-90 hover:shadow-glow
+           active:scale-[0.98]
+           disabled:opacity-40 disabled:cursor-not-allowed
+           transition-all duration-150;
   }
   .btn-gold {
-    @apply bg-quest-gold hover:bg-yellow-400 text-black font-bold px-4 py-2 rounded-lg transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center gap-2
+           bg-q-gold text-black font-bold text-sm
+           px-4 py-2.5 rounded-xl
+           hover:opacity-90 active:scale-[0.98]
+           disabled:opacity-40 disabled:cursor-not-allowed
+           transition-all duration-150;
+  }
+  .btn-orange {
+    @apply inline-flex items-center justify-center gap-2
+           bg-orange-500 text-white font-semibold text-sm
+           px-4 py-2.5 rounded-xl
+           hover:bg-orange-400 hover:shadow-[0_0_0_1px_rgba(249,115,22,0.4),0_4px_16px_rgba(249,115,22,0.2)]
+           active:scale-[0.98]
+           disabled:opacity-40 disabled:cursor-not-allowed
+           transition-all duration-150;
   }
   .btn-ghost {
-    @apply border border-quest-border hover:border-quest-purple text-quest-muted hover:text-white px-4 py-2 rounded-lg transition-all duration-150;
+    @apply inline-flex items-center justify-center gap-2
+           border border-q-border text-q-muted font-medium text-sm
+           px-4 py-2.5 rounded-xl
+           hover:border-q-purple/50 hover:text-q-text hover:bg-q-purple/5
+           active:scale-[0.98]
+           transition-all duration-150;
   }
+
+  /* Cards */
   .card {
-    @apply bg-quest-card border border-quest-border rounded-xl p-5;
+    @apply bg-q-surface border border-q-border/70 rounded-2xl p-5;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.28), 0 1px 3px rgba(0,0,0,0.18);
   }
+  .light .card {
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .card-hover {
+    @apply card cursor-pointer
+           hover:border-q-purple/50
+           hover:-translate-y-0.5
+           transition-all duration-200;
+    &:hover { box-shadow: 0 8px 32px rgba(118,116,247,0.18), 0 2px 8px rgba(0,0,0,0.3); }
+  }
+  .light .card-hover:hover {
+    box-shadow: 0 4px 20px rgba(99,102,241,0.12), 0 1px 4px rgba(0,0,0,0.06);
+  }
+
+  /* Inputs — Contrast principle: clearly distinct from card surface */
   .input {
-    @apply bg-quest-surface border border-quest-border rounded-lg px-3 py-2 text-white placeholder-quest-muted focus:outline-none focus:border-quest-purple w-full text-sm;
+    @apply bg-q-bg border border-q-border/80 rounded-xl
+           px-3.5 py-2.5 text-q-text text-sm
+           placeholder:text-q-muted/60
+           focus:outline-none focus:border-q-purple/50 focus:ring-2 focus:ring-q-purple/10
+           w-full;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
+  textarea.input { line-height: 1.6; }
+
+  /* Labels — Hierarchy principle: clearly secondary to values */
   .label {
-    @apply text-xs text-quest-muted uppercase tracking-wider mb-1 block;
+    @apply block text-[10px] font-bold uppercase tracking-[0.1em] text-q-muted mb-2;
+  }
+
+  /* Badges */
+  .badge        { @apply inline-flex items-center gap-1.5 text-[11px] font-semibold px-2.5 py-1 rounded-full border; }
+  .badge-purple { @apply badge bg-q-purple/10 border-q-purple/25 text-q-purple; }
+  .badge-green  { @apply badge bg-q-green/10  border-q-green/25  text-q-green; }
+  .badge-red    { @apply badge bg-q-red/10    border-q-red/25    text-q-red; }
+  .badge-muted  { @apply badge bg-q-bg        border-q-border/60 text-q-muted; }
+  .badge-gold   { @apply badge bg-q-gold/10   border-q-gold/25   text-q-gold; }
+
+  /* Divider — Proximity principle: clear visual separation between groups */
+  .divider { @apply border-t border-q-border/50 my-6; }
+
+  /* Page section title */
+  .section-label {
+    @apply text-[10px] font-bold uppercase tracking-[0.1em] text-q-muted/70;
   }
 }

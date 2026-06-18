@@ -16,7 +16,7 @@ export function TxHistoryPanel({ records, onClear, onClose }: Props) {
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-quest-border">
           <div>
-            <h2 className="text-white font-semibold">Transaction History</h2>
+            <h2 className="text-q-text font-semibold">Transaction History</h2>
             <p className="text-xs text-quest-muted mt-0.5">{records.length} transactions</p>
           </div>
           <div className="flex items-center gap-2">
@@ -29,7 +29,7 @@ export function TxHistoryPanel({ records, onClear, onClose }: Props) {
               </button>
             )}
             <button
-              className="text-quest-muted hover:text-white transition-colors text-lg leading-none"
+              className="text-quest-muted hover:text-q-text transition-colors text-lg leading-none"
               onClick={onClose}
             >
               ✕
@@ -59,13 +59,13 @@ function TxRow({ record }: { record: TxRecord }) {
   const currentPhase = record.finalPhase ?? phase
   const isError = currentPhase === 'UNDETERMINED' || currentPhase === 'CANCELED' ||
                   currentPhase === 'VALIDATORS_TIMEOUT' || currentPhase === 'LEADER_TIMEOUT'
-  const isFinalized = currentPhase === 'FINALIZED' || !!record.finalPhase
+  const isFinalized = currentPhase === 'FINALIZED' || currentPhase === 'ACCEPTED' || !!record.finalPhase
   const isPending = !done && !record.finalPhase
 
   return (
     <div className="card py-3 px-4">
       <div className="flex items-start justify-between gap-2 mb-1">
-        <span className="text-white text-sm font-medium truncate flex-1">{record.label}</span>
+        <span className="text-q-text text-sm font-medium truncate flex-1">{record.label}</span>
         <TxBadge phase={currentPhase} isError={isError} isFinalized={isFinalized} isPending={isPending} />
       </div>
       <div className="flex items-center justify-between text-xs text-quest-muted">

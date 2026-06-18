@@ -20,6 +20,7 @@ const PHASE_INDEX: Partial<Record<TxPhase, number>> = {
 }
 
 const ERROR_PHASES: TxPhase[] = ['UNDETERMINED', 'CANCELED', 'VALIDATORS_TIMEOUT', 'LEADER_TIMEOUT']
+const SUCCESS_PHASES: TxPhase[] = ['ACCEPTED', 'FINALIZED']
 
 export function ConsensusTracker({ hash, onDone }: Props) {
   const { phase, result, done, error } = usePollTx(hash)
@@ -28,7 +29,7 @@ export function ConsensusTracker({ hash, onDone }: Props) {
   useEffect(() => {
     if (done && !prevDone.current) {
       prevDone.current = true
-      const success = !phase || !ERROR_PHASES.includes(phase)
+      const success = phase !== null && (SUCCESS_PHASES.includes(phase) || !ERROR_PHASES.includes(phase))
       onDone?.(success)
     }
   }, [done, phase, result, onDone])

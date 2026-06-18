@@ -1,10 +1,12 @@
 import { useMemo } from 'react'
 import type { Quest, Submission } from '../types'
-import { formatGEN, shortAddr } from '../hooks/useTx'
+import { formatGEN, displayName } from '../hooks/useTx'
 
 interface Props {
   allQuests: Quest[]
   address: string
+  submissionItems: { questId: number; submission: Submission }[]
+  subsLoading: boolean
   onSelectQuest: (id: number) => void
 }
 
@@ -13,24 +15,21 @@ interface MySubmission {
   submission: Submission
 }
 
-export function MyDashboard({ allQuests, address, onSelectQuest }: Props) {
+export function MyDashboard({ allQuests, address, submissionItems, subsLoading, onSelectQuest }: Props) {
   const myPostedQuests = useMemo(
-    () => allQuests.filter(q => q.creator.toLowerCase() === address.toLowerCase()),
+    () => allQuests.filter(q => q.creator.toLowerCase() === address.toLowerCase() && (q.active || q.completed)),
     [allQuests, address],
   )
 
   const mySubmissions = useMemo<MySubmission[]>(() => {
-    const out: MySubmission[] = []
-    for (const quest of allQuests) {
-      const subs = (quest as Quest & { submissions?: Submission[] }).submissions ?? []
-      for (const sub of subs) {
-        if (sub.submitter.toLowerCase() === address.toLowerCase()) {
-          out.push({ quest, submission: sub })
-        }
-      }
-    }
-    return out
-  }, [allQuests, address])
+    const questMap = new Map(allQuests.map(q => [q.id, q]))
+    return submissionItems
+      .map(({ questId, submission }) => {
+        const quest = questMap.get(questId)
+        return quest ? { quest, submission } : null
+      })
+      .filter((x): x is MySubmission => x !== null)
+  }, [allQuests, submissionItems])
 
   const totalLocked = useMemo(
     () => myPostedQuests.filter(q => q.active && !q.completed).reduce((sum, q) => sum + BigInt(q.reward), BigInt(0)),
@@ -48,7 +47,7 @@ export function MyDashboard({ allQuests, address, onSelectQuest }: Props) {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <StatCard label="Quests Posted"  value={myPostedQuests.length}          color="text-quest-purple" />
         <StatCard label="GEN Locked"     value={`${formatGEN(totalLocked)} GEN`} color="text-quest-gold"   />
-        <StatCard label="Submitted To"   value={mySubmissions.length}            color="text-white"        />
+        <StatCard label="Submitted To"   value={subsLoading ? '…' : mySubmissions.length} color="text-q-text" />
         <StatCard label="GEN Won"        value={`${formatGEN(totalWon)} GEN`}    color="text-quest-green"  />
       </div>
 
@@ -102,14 +101,14 @@ function PostedQuestRow({ quest, onClick }: { quest: Quest; onClick: () => void 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <QuestStatusDot quest={quest} />
-            <span className="text-white font-medium truncate">{quest.title}</span>
+            <span className="text-q-text font-medium truncate">{quest.title}</span>
           </div>
           <span className="text-xs text-quest-muted">Quest #{quest.id}</span>
         </div>
         <div className="text-right flex-shrink-0">
           <div className="text-quest-gold font-bold">{formatGEN(quest.reward)} GEN</div>
           {quest.winner && (
-            <div className="text-xs text-quest-green">Won by {shortAddr(quest.winner)}</div>
+            <div className="text-xs text-quest-green">Won by {displayName(quest.winner)}</div>
           )}
         </div>
       </div>
@@ -132,7 +131,7 @@ function MySubmissionRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <SubStatusDot sub={submission} />
-            <span className="text-white font-medium truncate text-sm">{quest.title}</span>
+            <span className="text-q-text font-medium truncate text-sm">{quest.title}</span>
           </div>
           <p className="text-xs text-quest-muted line-clamp-1">{submission.proof}</p>
           {submission.reason && (
